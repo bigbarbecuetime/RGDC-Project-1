@@ -2,7 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Timer : MonoBehaviour
+/// <summary>
+/// A basic countdown for the player's timer.
+/// </summary>
+public class PlayerTimer : MonoBehaviour
 {
    
     public float startingTime = 100.0f;
@@ -35,7 +38,12 @@ public class Timer : MonoBehaviour
     private void OnGUI()
     {
         GUILayout.BeginHorizontal();
-        GUILayout.Label($"Time left: {CurrentTime}");
+        GUILayout.Label($"Time left: {ToString()}");
         GUILayout.EndHorizontal();
+    }
+
+    public override string ToString()
+    {
+        return $"{(int)(currentTime/60)%60}:{currentTime%60}";
     }
 }

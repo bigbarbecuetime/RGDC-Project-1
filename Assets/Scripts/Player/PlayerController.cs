@@ -57,10 +57,16 @@ namespace RGDCP1.Player
         private float maxVelocity;
 
         /// <summary>
-        /// Acceleration in m/s
+        /// Acceleration in m/s^2, currently unused, see "force"
         /// </summary>
         [Min(MIN_ATTRIBUTE_VALUE)]
-        private float acceleration;
+        public float acceleration;
+
+        /// <summary>
+        /// Force applied per fixed time, in newtons
+        /// </summary>
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        public float force;
 
         /// <summary>
         /// Player will jump, called by event from player input component.
@@ -91,11 +97,8 @@ namespace RGDCP1.Player
             // Note when moving the player, it is better to use the rigidbody's position, not the transforms
             // Potentially track a "Speed effect" velocity, then once forces reach the maximum speed effect, stop applying them
             // TODO: update to use acceleration
-            // TODO update to calculate velocity effect
-            if (velocityEffect.x <= maxVelocity && velocityEffect.x >= maxVelocity)
-            {
-                playerRigidbody.AddForce(new Vector2(10 * Time.fixedDeltaTime*xMovementAxis, 0));
-            }
+            // TODO update to calculate velocity effect and limit max velocity effect
+            playerRigidbody.AddForce(new Vector2(force * Time.fixedDeltaTime * xMovementAxis * playerRigidbody.mass, 0));
         }
     }
 }

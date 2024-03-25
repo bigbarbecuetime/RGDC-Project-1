@@ -11,13 +11,13 @@ namespace RGDCP1.Player
     {
         // TODO: Player Controller will eventually use a Finite State Machine to track its current state. (Ex. Falling, Running)
         // TODO: Ensure Player Controller feels good to use during gameplay.
-
+        // TODO: Seperate Camera controller into its own class
         // TODO: Player gets stuck against walls when moving into them, this may require the method of moving the player to be redesigned.
 
         /// <summary>
         /// The minimum value that can be entered in unity's inspector for the script
         /// </summary>
-        private const int MIN_ATTRIBUTE_VALUE = 1;
+        private const int MIN_ATTRIBUTE_VALUE = 0;
 
         /// <summary>
         /// Value used to determine if moving left or right in the x axis.
@@ -25,10 +25,22 @@ namespace RGDCP1.Player
         private float xMovementAxis = 0;
 
         /// <summary>
+        /// Effect on velocity 
+        /// </summary>
+        // TODO: Complete comment
+        private Vector2 velocityEffect;
+
+        /// <summary>
         /// Rigidbody used for the player's movement.
         /// </summary>
         [SerializeField]
         private Rigidbody2D playerRigidbody;
+
+        // Camera settings section.
+        [Header("Camera Settings")]
+
+        // Movement settings section.
+        [Header("Movement Settings")]
 
         /// <summary>
         /// The force the player will experience when jumping.
@@ -45,12 +57,19 @@ namespace RGDCP1.Player
         private float maxVelocity;
 
         /// <summary>
+        /// Acceleration in m/s
+        /// </summary>
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        private float acceleration;
+
+        /// <summary>
         /// Player will jump, called by event from player input component.
         /// </summary>
         public void OnJump()
         {
             // TODO: Only allow jumps when touching (Or very close) to the ground.
-            playerRigidbody.AddForce(Vector3.up * jumpForce);
+            // TODO: Jump height should be variable depending on how long you hold jump
+            playerRigidbody.AddForce(Vector3.up * jumpForce, ForceMode2D.Impulse);
         }
 
         /// <summary>
@@ -58,7 +77,6 @@ namespace RGDCP1.Player
         /// </summary>
         public void OnMove(InputAction.CallbackContext context)
         {
-            // HACK: This design does not seem good, potentially update movement some other way.
             xMovementAxis = context.ReadValue<float>();
         }
 
@@ -68,7 +86,16 @@ namespace RGDCP1.Player
         public void FixedUpdate()
         {
             // Move player depending on x axis input
-            playerRigidbody.velocity = new Vector2(xMovementAxis * maxVelocity, playerRigidbody.velocity.y);
+            // TODO: This is still WIP, need to cap the change in velocity, while allowing for objects to hit the player with uncapped delta v
+            // HACK: Ideally, the input speed should change between states, meaning when in air, you are only allowed to +-2m/s of force, while landed could be +-10m/s
+            // Note when moving the player, it is better to use the rigidbody's position, not the transforms
+            // Potentially track a "Speed effect" velocity, then once forces reach the maximum speed effect, stop applying them
+            // TODO: update to use acceleration
+            // TODO update to calculate velocity effect
+            if (velocityEffect.x <= maxVelocity && velocityEffect.x >= maxVelocity)
+            {
+                playerRigidbody.AddForce(new Vector2(10 * Time.fixedDeltaTime*xMovementAxis, 0));
+            }
         }
     }
 }

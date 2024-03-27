@@ -98,7 +98,15 @@ namespace RGDCP1.Player
             // Potentially track a "Speed effect" velocity, then once forces reach the maximum speed effect, stop applying them
             // TODO: update to use acceleration
             // TODO update to calculate velocity effect and limit max velocity effect
-            playerRigidbody.AddForce(new Vector2(force * Time.fixedDeltaTime * xMovementAxis * playerRigidbody.mass, 0));
+            if (Mathf.Abs(playerRigidbody.velocity.x) < maxVelocity)
+            {
+                playerRigidbody.AddForce(new Vector2(force * Time.fixedDeltaTime * xMovementAxis * playerRigidbody.mass, 0));
+            }
+            if (xMovementAxis == 0 && Mathf.Abs(playerRigidbody.velocity.x) > 0.1)
+            {
+                playerRigidbody.AddForce(new Vector2(force * Time.fixedDeltaTime * playerRigidbody.mass * Mathf.Ceil(playerRigidbody.velocity.normalized.x) * -1, 0));
+            }
+            Debug.DrawRay(playerRigidbody.position, (playerRigidbody.velocity/maxVelocity)*Camera.main.orthographicSize);
         }
     }
 }

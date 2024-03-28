@@ -63,12 +63,6 @@ namespace RGDCP1.Player
         public float acceleration;
 
         /// <summary>
-        /// Force applied per fixed time, in newtons
-        /// </summary>
-        [Min(MIN_ATTRIBUTE_VALUE)]
-        public float force;
-
-        /// <summary>
         /// Player will jump, called by event from player input component.
         /// </summary>
         public void OnJump()
@@ -86,6 +80,21 @@ namespace RGDCP1.Player
             xMovementAxis = context.ReadValue<float>();
         }
 
+        private float timer = 0;
+        private bool timerStarted = false;
+        public void Update()
+        {
+            if (timerStarted && (timer * acceleration >= maxVelocity))
+            {
+                Debug.Log(timer);
+                Debug.Log(timer * acceleration);
+                Debug.Log(playerRigidbody.velocity);
+                Time.timeScale = 0;
+                timerStarted = false;
+            }
+            Debug.DrawRay(playerRigidbody.position, (playerRigidbody.velocity / maxVelocity) * Camera.main.orthographicSize);
+        }
+
         /// <summary>
         /// FixedUpdated called by Unity's physics system.
         /// </summary>
@@ -98,15 +107,9 @@ namespace RGDCP1.Player
             // Potentially track a "Speed effect" velocity, then once forces reach the maximum speed effect, stop applying them
             // TODO: update to use acceleration
             // TODO update to calculate velocity effect and limit max velocity effect
-            if (Mathf.Abs(playerRigidbody.velocity.x) < maxVelocity)
-            {
-                playerRigidbody.AddForce(new Vector2(force * Time.fixedDeltaTime * xMovementAxis * playerRigidbody.mass, 0));
-            }
-            if (xMovementAxis == 0 && Mathf.Abs(playerRigidbody.velocity.x) > 0.1)
-            {
-                playerRigidbody.AddForce(new Vector2(force * Time.fixedDeltaTime * playerRigidbody.mass * Mathf.Ceil(playerRigidbody.velocity.normalized.x) * -1, 0));
-            }
-            Debug.DrawRay(playerRigidbody.position, (playerRigidbody.velocity/maxVelocity)*Camera.main.orthographicSize);
+            playerRigidbody.AddForce(new Vector2(acceleration * playerRigidbody.mass, 0));
+            if(!timerStarted) timerStarted = true;
+            if (timerStarted && playerRigidbody.velocity.x != 0) timer += Time.deltaTime;
         }
     }
 }

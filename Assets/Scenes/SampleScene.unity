@@ -519,9 +519,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerRigidbody: {fileID: 1224882113}
   jumpForce: 6
-  maxVelocity: 10
-  acceleration: 0
-  force: 500
+  maxVelocity: 4
+  acceleration: 1
 --- !u!114 &1224882118
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -597,7 +596,7 @@ CapsuleCollider2D:
   m_GameObject: {fileID: 1224882112}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 6200000, guid: a9160f6582d4dbd4e91c7a2044351a10, type: 2}
+  m_Material: {fileID: 6200000, guid: 9a49ef62407712740aa02ac3f04bd1f8, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0

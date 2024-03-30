@@ -25,12 +25,6 @@ namespace RGDCP1.Player
         private float xMovementAxis = 0;
 
         /// <summary>
-        /// Effect on velocity 
-        /// </summary>
-        // TODO: Complete comment
-        private Vector2 velocityEffect;
-
-        /// <summary>
         /// Rigidbody used for the player's movement.
         /// </summary>
         [SerializeField]
@@ -57,10 +51,16 @@ namespace RGDCP1.Player
         private float maxVelocity;
 
         /// <summary>
-        /// Acceleration in m/s^2, currently unused, see "force"
+        /// Acceleration in m/s^2
         /// </summary>
         [Min(MIN_ATTRIBUTE_VALUE)]
         public float acceleration;
+
+        /// <summary>
+        /// Deceleration in m/s^2
+        /// </summary>
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        public float deceleration;
 
         /// <summary>
         /// Player will jump, called by event from player input component.
@@ -79,20 +79,13 @@ namespace RGDCP1.Player
         {
             xMovementAxis = context.ReadValue<float>();
         }
+        float debugVel = 0;
 
-        private float timer = 0;
-        private bool timerStarted = false;
         public void Update()
         {
-            if (timerStarted && (timer * acceleration >= maxVelocity))
-            {
-                Debug.Log(timer);
-                Debug.Log(timer * acceleration);
-                Debug.Log(playerRigidbody.velocity);
-                Time.timeScale = 0;
-                timerStarted = false;
-            }
+            // Draw the current velocity
             Debug.DrawRay(playerRigidbody.position, (playerRigidbody.velocity / maxVelocity) * Camera.main.orthographicSize);
+            Debug.DrawRay(playerRigidbody.position + new Vector2(0, 1.5f), (new Vector2(debugVel,0) / maxVelocity) * Camera.main.orthographicSize);
         }
 
         /// <summary>
@@ -107,9 +100,46 @@ namespace RGDCP1.Player
             // Potentially track a "Speed effect" velocity, then once forces reach the maximum speed effect, stop applying them
             // TODO: update to use acceleration
             // TODO update to calculate velocity effect and limit max velocity effect
+
+            //DebugMovement();
+            PhysMovement();
+        }
+
+        /// <summary>
+        /// Value used as a timer for debugging 
+        /// </summary>
+        private float debugTimer = 0;
+        /// <summary>
+        /// Used to verify acceleration and velocity values used in the velocity effect section
+        /// </summary>
+        private void DebugMovement()
+        {
             playerRigidbody.AddForce(new Vector2(acceleration * playerRigidbody.mass, 0));
-            if(!timerStarted) timerStarted = true;
-            if (timerStarted && playerRigidbody.velocity.x != 0) timer += Time.deltaTime;
+            debugTimer += Time.fixedDeltaTime;
+
+            if (debugTimer * acceleration >= maxVelocity)
+            {
+                Debug.Log("Time to max velocity: " + debugTimer + " seconds");
+                Debug.Log("Calculated velocity: " + debugTimer * acceleration);
+                Debug.Log("Actual velocity: " + playerRigidbody.velocity);
+                Time.timeScale = 0;
+            }
+        }
+       
+        private void PhysMovement()
+        {
+            // Deceleration (If trying to move opposite to current velocity direction)
+            if (xMovementAxis * -1 == Mathf.Ceil(playerRigidbody.velocity.normalized.x))
+            {
+                playerRigidbody.AddForce(new Vector2(deceleration * playerRigidbody.mass * xMovementAxis, 0));
+            }
+            // Acceleration, checking if we are overspeed
+            else if (Mathf.Abs(playerRigidbody.velocity.x) < maxVelocity)
+            {
+                playerRigidbody.AddForce(new Vector2(acceleration * playerRigidbody.mass * xMovementAxis, 0));
+            }
+
+            // TODO: Add slowdown when no input
         }
     }
 }

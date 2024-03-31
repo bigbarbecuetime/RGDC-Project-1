@@ -203,7 +203,7 @@ GameObject:
   - component: {fileID: 643631513}
   - component: {fileID: 643631512}
   m_Layer: 0
-  m_Name: Circle
+  m_Name: DebugBouncyBall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -245,7 +245,7 @@ CircleCollider2D:
   m_GameObject: {fileID: 643631511}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 100824bb86aaf8d4ba187cf0e6d1085c, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -570,7 +570,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
+  m_Mass: 2
   m_LinearDrag: 0
   m_AngularDrag: 0.05
   m_GravityScale: 1
@@ -666,10 +666,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerRigidbody: {fileID: 1224882113}
-  jumpForce: 6
-  maxVelocity: 6
-  acceleration: 8
-  deceleration: 14
+  jumpAcceleration: 10
+  maxVelocity: 12
+  airAcceleration: 8
+  airDeceleration: 12
+  groundAcceleration: 6
+  groundDeceleration: 8
 --- !u!114 &1224882118
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -700,7 +702,7 @@ MonoBehaviour:
       - m_Target: {fileID: 1224882117}
         m_TargetAssemblyTypeName: RGDCP1.Player.PlayerController, Assembly-CSharp
         m_MethodName: OnJump
-        m_Mode: 1
+        m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine

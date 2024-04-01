@@ -89,6 +89,7 @@ namespace RGDCP1.Player
             float value = context.ReadValue<float>();
             // TODO: Only allow jumps when touching (Or very close) to the ground (Buffered).
             // TODO: Jump height should be variable depending on how long you hold jump
+            // TODO: Jumps should push the object jumped from in a proper way
             if (value > 0) playerRigidbody.AddForce(Vector3.up * jumpAcceleration * value * playerRigidbody.mass, ForceMode2D.Impulse);
         }
 
@@ -98,12 +99,6 @@ namespace RGDCP1.Player
         public void OnMove(InputAction.CallbackContext context)
         {
             xMovementAxis = context.ReadValue<float>();
-        }
-
-        public void Update()
-        {
-            // Draw the current velocity for debugging
-            Debug.DrawRay(playerRigidbody.position, (playerRigidbody.velocity / maxVelocity) * Camera.main.orthographicSize);
         }
 
         /// <summary>

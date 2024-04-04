@@ -116,8 +116,14 @@ namespace RGDCP1.Player
             // What angle do we want?
             // Transform is not the position of the collision, its the position of the object
             // TODO: Set go through each contact in the collision, if one is within a valid range, then we can jump
-            Debug.Log(collision.transform.position - new Vector3(playerRigidbody.position.x, playerRigidbody.position.y, 0));
-            //Debug.Log("Hit: " + collision.gameObject.name + " " +  Vector3.Angle(collision.transform.position, playerRigidbody.position));
+            foreach (ContactPoint2D contact in collision.contacts)
+            {
+                Vector3 contactDirection = (playerRigidbody.position - contact.point).normalized;
+                Vector3 playerHead = Vector3.up;
+                float relativeAngle = Vector3.Angle(contactDirection, playerHead);
+                Debug.Log(relativeAngle);
+            }
+            //Debug.Log("Hit: " + collision.otherCollider.name + " " +  Vector3.Angle(collision.transform.position, playerRigidbody.position));
         }
 
         /// <summary>

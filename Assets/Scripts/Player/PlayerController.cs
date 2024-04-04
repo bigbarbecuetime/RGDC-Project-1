@@ -81,6 +81,9 @@ namespace RGDCP1.Player
         [Min(MIN_ATTRIBUTE_VALUE)]
         public float groundDeceleration;
 
+        // TODO: Comment
+        bool isGrounded = false;
+
         /// <summary>
         /// Player will jump, called by event from player input component.
         /// </summary>
@@ -99,6 +102,22 @@ namespace RGDCP1.Player
         public void OnMove(InputAction.CallbackContext context)
         {
             xMovementAxis = context.ReadValue<float>();
+        }
+
+        // TODO: Comment
+        public void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (isGrounded) return;
+            // Used to check if we are grounded
+            // Compare the angle of the object we collided with, with our "head"
+            // If within a spefied range, we consider it valid for jumping from
+            // TODO: Should jumping be stronger when at a closer angle?
+            // Dot product gets angle between two vectors
+            // What angle do we want?
+            // Transform is not the position of the collision, its the position of the object
+            // TODO: Set go through each contact in the collision, if one is within a valid range, then we can jump
+            Debug.Log(collision.transform.position - new Vector3(playerRigidbody.position.x, playerRigidbody.position.y, 0));
+            //Debug.Log("Hit: " + collision.gameObject.name + " " +  Vector3.Angle(collision.transform.position, playerRigidbody.position));
         }
 
         /// <summary>

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace RGDCP1.Debug
+namespace RGDCP1.Debugging
 {
 
     public class RigidbodyDebug : MonoBehaviour
@@ -24,7 +24,7 @@ namespace RGDCP1.Debug
 
         // Start is called before the first frame update
         void Start()
-        {
+        { 
             gameObject.TryGetComponent<Rigidbody>(out rb);
             if (rb == null)
             {

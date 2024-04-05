@@ -82,6 +82,15 @@ namespace RGDCP1.Player
         public float groundDeceleration;
 
         // TODO: Comment
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        public float maxJumpAngle;
+
+        // Debug settings section.
+        [Header("Debug Settings")]
+        [SerializeField]
+        bool debugMode;
+
+        // TODO: Comment
         bool isGrounded = false;
 
         /// <summary>
@@ -105,25 +114,18 @@ namespace RGDCP1.Player
         }
 
         // TODO: Comment
-        public void OnCollisionEnter2D(Collision2D collision)
+        public void OnCollisionStay2D(Collision2D collision)
         {
-            if (isGrounded) return;
-            // Used to check if we are grounded
-            // Compare the angle of the object we collided with, with our "head"
-            // If within a spefied range, we consider it valid for jumping from
-            // TODO: Should jumping be stronger when at a closer angle?
-            // Dot product gets angle between two vectors
-            // What angle do we want?
-            // Transform is not the position of the collision, its the position of the object
-            // TODO: Set go through each contact in the collision, if one is within a valid range, then we can jump
+            // TODO Apply jump force in .normal direction of collided surface
             foreach (ContactPoint2D contact in collision.contacts)
             {
-                Vector3 contactDirection = (playerRigidbody.position - contact.point).normalized;
-                Vector3 playerHead = Vector3.up;
-                float relativeAngle = Vector3.Angle(contactDirection, playerHead);
-                Debug.Log(relativeAngle);
+                float relativeAngle = RelativeAngle(contact.point);
+                if (relativeAngle <= maxJumpAngle)
+                {
+                    isGrounded = true;
+                    break;
+                }
             }
-            //Debug.Log("Hit: " + collision.otherCollider.name + " " +  Vector3.Angle(collision.transform.position, playerRigidbody.position));
         }
 
         /// <summary>
@@ -131,9 +133,12 @@ namespace RGDCP1.Player
         /// </summary>
         public void FixedUpdate()
         {
+            if (debugMode) playerRigidbody.GetComponent<SpriteRenderer>().color = isGrounded ? Color.green : Color.red;
             // Move player depending on x axis input
             // Note when moving the player, it is better to use the rigidbody's position, not the transforms
             PhysMovement();
+            
+            isGrounded = false;
         }
 
         // TODO: Refactor to use and define a series of states
@@ -177,6 +182,13 @@ namespace RGDCP1.Player
                 }
                 playerRigidbody.AddForce(new Vector2(force*xMovementAxis, 0));
             }          
+        }
+
+        private float RelativeAngle(Vector2 point)
+        {
+            Vector2 contactDirection = (playerRigidbody.position - point).normalized;
+            Vector2 playerHead = Vector3.up;
+            return Vector3.Angle(contactDirection, playerHead);
         }
     }
 }

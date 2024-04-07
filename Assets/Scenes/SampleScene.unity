@@ -686,6 +686,8 @@ MonoBehaviour:
   airDeceleration: 12
   groundAcceleration: 6
   groundDeceleration: 8
+  maxJumpAngle: 40
+  debugMode: 1
 --- !u!114 &1224882118
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,32 +1,45 @@
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static UnityEngine.Rendering.DebugUI;
 
 namespace RGDCP1.Player
 {
     /// <summary>
-    /// PlayerController is used to determine the physical movements of the player in the world.
-    /// It is a physics based controller using a rigidbody.
+    /// PlayerController is used to determine the physical movements, and movement state of the player in the world.
+    /// It is a physics based controller relying on a rigidbody2d.
     /// </summary>
     public class PlayerController : MonoBehaviour
     {
-        // TODO: Player Controller will eventually use a Finite State Machine to track its current state. (Ex. Falling, Running)
-        // TODO: Add support for acceleration "functions", exponential, logarithmic, linear ans so on.
+        // TODO: State - Player Controller will eventually use a Finite State Machine to track its current state. (Ex. Falling, Running)
+        // TODO: Acceleration  Functions - Add support for acceleration "functions", exponential, logarithmic, linear ans so on.
 
         /// <summary>
         /// The minimum value that can be entered in unity's inspector for the script.
         /// </summary>
         private const int MIN_ATTRIBUTE_VALUE = 0;
 
+        // TODO: Movement - Update to support more than just -1, 0, 1 should work with all floating point values
         /// <summary>
-        /// Value used to determine if moving left or right in the x axis.
+        /// Value used to determine if trying to move left or right in the x axis.
+        /// Fixed between -1 - 1
         /// </summary>
         private float xMovementAxis = 0;
+
+        /// <summary>
+        ///  Value used to determine if trying to jump
+        /// </summary>
+        private bool jumpPressed;
 
         /// <summary>
         /// Threashold to see when we need to slow down the player automatically, when landed and no input is pressed, calculated based on deceleration.
         /// </summary>
         private float slowdownThreshold;
+
+        /// <summary>
+        /// Direction of the "head" of the player, its relative up
+        /// </summary>
+        private Vector2 playerHead = Vector3.up;
 
         /// <summary>
         /// Rigidbody used for the player's movement.
@@ -45,69 +58,81 @@ namespace RGDCP1.Player
         /// </summary>
         [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
-        public float jumpAcceleration;
+        private float jumpAcceleration;
 
         /// <summary>
         /// Maximum velocity player can have.
         /// </summary>
         [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
-        public float maxVelocity;
+        private float maxVelocity;
 
         /// <summary>
         /// Acceleration in m/s^2 for when the player is in the air.
         /// </summary>
+        [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
-        public float airAcceleration;
+        private float airAcceleration;
 
         /// <summary>
         /// Deceleration in m/s^2 for when the player is in the air.
         /// </summary>
+        [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
-        public float airDeceleration;
+        private float airDeceleration;
 
         /// <summary>
         /// Acceleration in m/s^2 for when the player is grounded.
         /// </summary>
+        [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
-        public float groundAcceleration;
+        private float groundAcceleration;
 
         /// <summary>
         /// Deceleration in m/s^2 for when the player is grounded.
         /// </summary>
+        [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
-        public float groundDeceleration;
+        private float groundDeceleration;
 
-        // TODO: Comment
+        /// <summary>
+        /// Should the player auto slowdown when in the air?
+        /// </summary>
+        [SerializeField]
+        private bool autoSlowdownInAir;
+
+        /// <summary>
+        /// Maximum angle allowed to be considered if the player is "touching the ground" upon collision
+        /// </summary>
+        [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
-        public float maxJumpAngle;
+        private float maxGroundCollisionAngle;
 
         // Debug settings section
         [Header("Debug Settings")]
-        [SerializeField]
 
-        // TODO: Eventually replace with a "debugger" that maintains all debugging state
+        // TODO: Debug - Eventually replace with a "debugger" that maintains all debugging state
         /// <summary>
         /// Determines if debugging is enabled for this player controller
         /// </summary>
+        [SerializeField]
         private bool debugMode;
 
-                    
+        // TODO: State - state should be stored in a seperate state machine class
+        /// <summary>
+        /// Stores if the player is currently grounded or not
+        /// The player is considered grounded when, the player's "feet" are touching a surface below it
+        /// </summary>
         private bool isGrounded = false;
 
-        // TODO: Jumps should occur in their own function, fired in fixed update.
         /// <summary>
         /// Player will jump, called by event from player input component.
         /// </summary>
         /// /// <param name="context"></param>
         public void OnJump(InputAction.CallbackContext context)
         {
-            float value = context.ReadValue<float>();
-            // TODO: Apply jump force in .normal direction of collided surface.
-            // TODO: Only allow jumps when touching (Or very close) to the ground (Buffered).
-            // TODO: Jump height should be variable depending on how long you hold jump
-            // TODO: Jumps should push the object jumped from in a proper way
-            if (value > 0 && isGrounded) playerRigidbody.AddForce(Vector3.up * jumpAcceleration * value * playerRigidbody.mass, ForceMode2D.Impulse);
+            // TODO: Jump - Add buffering to jump input.
+            jumpPressed = context.ReadValue<float>() > 0;
         }
 
         /// <summary>
@@ -120,18 +145,18 @@ namespace RGDCP1.Player
         }
 
         /// <summary>
-        /// 
+        /// Upon entering a collision
         /// </summary>
-        /// <param name="collision"></param>
+        /// <param name="collision">The 2d collision</param>
         public void OnCollisionEnter2D(Collision2D collision)
         {
             UpdateIsGrounded(collision);
         }
 
         /// <summary>
-        /// 
+        /// While in a collision
         /// </summary>
-        /// <param name="collision"></param>
+        /// <param name="collision">The 2d collision</param>
         public void OnCollisionStay2D(Collision2D collision)
         {
             UpdateIsGrounded(collision);
@@ -143,23 +168,25 @@ namespace RGDCP1.Player
         public void FixedUpdate()
         {
             if (debugMode) playerRigidbody.GetComponent<SpriteRenderer>().color = isGrounded ? Color.green : Color.red;
-            // Move player depending on x axis input
-            // Note when moving the player, it is better to use the rigidbody's position, not the transforms
-            PhysMovementUpdate();
+            
+            MovementUpdate();
+            JumpUpdate();
             
             // We assume that if the player is not moving, then the player will stay in its current state, otherwise its possible to be not grounded
             isGrounded = playerRigidbody.velocity.magnitude <= 0 ? isGrounded : false;
         }
 
-        // TODO: Refactor to use and define a series of states
+        // TODO: State - Refactor to use a defined a series of states
         /// <summary>
-        /// Update the player for one step of time, based on phyisics
+        /// Update the player for one step of time  for movement
         /// </summary>
-        private void PhysMovementUpdate()
+        private void MovementUpdate()
         {
+            // Check if the acceleration should
             // Currently exponential
-            float acceleration = groundAcceleration*groundAcceleration;
-            float deceleration = groundDeceleration*groundDeceleration;
+            // TODO: Acceleration Functions - should use functions rather than fixed
+            float acceleration = isGrounded ? groundAcceleration*groundAcceleration : airAcceleration*airAcceleration;
+            float deceleration = isGrounded ? groundDeceleration *groundDeceleration : airDeceleration* airDeceleration;
 
             // Calculate the threshold to avoid overshooting auto slow down
             slowdownThreshold = deceleration * Time.fixedDeltaTime;
@@ -167,20 +194,21 @@ namespace RGDCP1.Player
             // Dot product, 1 being the same direction, 0 being perpendicular, -1 being oposites
             float currentDirection = Vector2.Dot(new Vector2(playerRigidbody.velocity.x,0).normalized, Vector2.right);
             
-            if (xMovementAxis == 0)
+            // AutoSlowdown, If the player is trying not to move and if the player is grounded proided that autoSlowdownInAir is enabled
+            if (xMovementAxis == 0 && (autoSlowdownInAir || isGrounded))
             {
-                // TODO: should check if in air, only want this when grounded
+                // If we need the auto slowdown
                 if (Mathf.Abs(playerRigidbody.velocity.x) >= slowdownThreshold)
                 {
                     playerRigidbody.AddForce(new Vector2(deceleration * playerRigidbody.mass * currentDirection * -1, 0));
                 }
-                // Ensures if we are under the threashold, we should be stopped, avoids jittering
+                // If we need slowdown and, we should be stopped, stop the player's x movement, to avoid jittering from the slowing
                 else if (Mathf.Abs(playerRigidbody.velocity.x) < slowdownThreshold && playerRigidbody.velocity.x != 0)
                 { 
                     playerRigidbody.velocity = new Vector2(0, playerRigidbody.velocity.y);
                 }
             }
-            // Deceleration (If trying to move opposite to current velocity direction)
+            // Deceleration (trying to move opposite to current velocity direction)
             else if (xMovementAxis * -1 == currentDirection)
             {
                playerRigidbody.AddForce(new Vector2(deceleration * playerRigidbody.mass * xMovementAxis, 0));
@@ -196,6 +224,17 @@ namespace RGDCP1.Player
                 playerRigidbody.AddForce(new Vector2(force*xMovementAxis, 0));
             }          
         }
+         
+        /// <summary>
+        /// Update the player for one time step for jumping
+        /// </summary> 
+        private void JumpUpdate()
+        {
+            // TODO: Jump - Apply jump force in .normal direction of collided surface.
+            // TODO: Jump - Jumps should be restricted, by time? height?.
+            // TODO: Jump - Jumps should push the object jumped from in a proper way.
+            if (jumpPressed) playerRigidbody.AddForce(playerHead * jumpAcceleration * playerRigidbody.mass);
+        }
 
         /// <summary>
         /// Check if the player is grounded, and update isGrounded to reflect the state
@@ -206,7 +245,7 @@ namespace RGDCP1.Player
             foreach (ContactPoint2D contact in collision.contacts)
             {
                 float relativeAngle = RelativeAngle(contact.point);
-                if (relativeAngle <= maxJumpAngle)
+                if (relativeAngle <= maxGroundCollisionAngle)
                 {
                     isGrounded = true;
                     break;
@@ -222,7 +261,6 @@ namespace RGDCP1.Player
         private float RelativeAngle(Vector2 point)
         {
             Vector2 contactDirection = (playerRigidbody.position - point).normalized;
-            Vector2 playerHead = Vector3.up;
             return Vector3.Angle(contactDirection, playerHead);
         }
     }

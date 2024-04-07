@@ -29,7 +29,7 @@
                     "name": "",
                     "id": "3c8fda11-2d62-42dd-b876-e4bc6a749216",
                     "path": "<Keyboard>/space",
-                    "interactions": "Tap",
+                    "interactions": "Hold",
                     "processors": "",
                     "groups": "",
                     "action": "Jump",

@@ -680,13 +680,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerRigidbody: {fileID: 1224882113}
-  jumpAcceleration: 10
+  jumpAcceleration: 50
   maxVelocity: 12
-  airAcceleration: 8
-  airDeceleration: 12
+  airAcceleration: 4
+  airDeceleration: 6
   groundAcceleration: 6
   groundDeceleration: 8
-  maxJumpAngle: 40
+  autoSlowdownInAir: 0
+  maxGroundCollisionAngle: 40
   debugMode: 1
 --- !u!114 &1224882118
 MonoBehaviour:

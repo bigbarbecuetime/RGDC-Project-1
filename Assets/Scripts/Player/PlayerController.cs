@@ -13,6 +13,7 @@ namespace RGDCP1.Player
     {
         // TODO: State - Player Controller will eventually use a Finite State Machine to track its current state. (Ex. Falling, Running)
         // TODO: Acceleration  Functions - Add support for acceleration "functions", exponential, logarithmic, linear ans so on.
+        // TODO: Acceleration Functions - Update to use curves for acceleration, rather than fixed functions
 
         /// <summary>
         /// The minimum value that can be entered in unity's inspector for the script.
@@ -39,7 +40,7 @@ namespace RGDCP1.Player
         /// <summary>
         /// Direction of the "head" of the player, its relative up
         /// </summary>
-        private Vector2 playerHead = Vector3.up;
+        private Vector2 playerUp = Vector3.up;
 
         /// <summary>
         /// Rigidbody used for the player's movement.
@@ -186,7 +187,7 @@ namespace RGDCP1.Player
             // Currently exponential
             // TODO: Acceleration Functions - should use functions rather than fixed
             float acceleration = isGrounded ? groundAcceleration*groundAcceleration : airAcceleration*airAcceleration;
-            float deceleration = isGrounded ? groundDeceleration *groundDeceleration : airDeceleration* airDeceleration;
+            float deceleration = isGrounded ? groundDeceleration*groundDeceleration : airDeceleration*airDeceleration;
 
             // Calculate the threshold to avoid overshooting auto slow down
             slowdownThreshold = deceleration * Time.fixedDeltaTime;
@@ -233,7 +234,7 @@ namespace RGDCP1.Player
             // TODO: Jump - Apply jump force in .normal direction of collided surface.
             // TODO: Jump - Jumps should be restricted, by time? height?.
             // TODO: Jump - Jumps should push the object jumped from in a proper way.
-            if (jumpPressed) playerRigidbody.AddForce(playerHead * jumpAcceleration * playerRigidbody.mass);
+            if (jumpPressed) playerRigidbody.AddForce(playerUp * jumpAcceleration * playerRigidbody.mass);
         }
 
         /// <summary>
@@ -261,7 +262,7 @@ namespace RGDCP1.Player
         private float RelativeAngle(Vector2 point)
         {
             Vector2 contactDirection = (playerRigidbody.position - point).normalized;
-            return Vector3.Angle(contactDirection, playerHead);
+            return Vector3.Angle(contactDirection, playerUp);
         }
     }
 }

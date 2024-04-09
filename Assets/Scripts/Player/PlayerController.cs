@@ -12,8 +12,6 @@ namespace RGDCP1.Player
     public class PlayerController : MonoBehaviour
     {
         // TODO: State - Player Controller will eventually use a Finite State Machine to track its current state. (Ex. Falling, Running)
-        // TODO: Acceleration  Functions - Add support for acceleration "functions", exponential, logarithmic, linear ans so on.
-        // TODO: Acceleration Functions - Update to use curves for acceleration, rather than fixed functions
 
         /// <summary>
         /// The minimum value that can be entered in unity's inspector for the script.
@@ -55,52 +53,33 @@ namespace RGDCP1.Player
         [Header("Movement Settings")]
 
         /// <summary>
-        /// The acceleration the player will experience when jumping.
+        /// Maximum x velocity player can have.
         /// </summary>
         [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
-        private float jumpAcceleration;
-
-        /// <summary>
-        /// Maximum velocity player can have.
-        /// </summary>
-        [SerializeField]
-        [Min(MIN_ATTRIBUTE_VALUE)]
-        private float maxVelocity;
-
-        /// <summary>
-        /// Acceleration in m/s^2 for when the player is in the air.
-        /// </summary>
-        [SerializeField]
-        [Min(MIN_ATTRIBUTE_VALUE)]
-        private float airAcceleration;
-
-        /// <summary>
-        /// Deceleration in m/s^2 for when the player is in the air.
-        /// </summary>
-        [SerializeField]
-        [Min(MIN_ATTRIBUTE_VALUE)]
-        private float airDeceleration;
-
-        /// <summary>
-        /// Acceleration in m/s^2 for when the player is grounded.
-        /// </summary>
-        [SerializeField]
-        [Min(MIN_ATTRIBUTE_VALUE)]
-        private float groundAcceleration;
-
-        /// <summary>
-        /// Deceleration in m/s^2 for when the player is grounded.
-        /// </summary>
-        [SerializeField]
-        [Min(MIN_ATTRIBUTE_VALUE)]
-        private float groundDeceleration;
+        private float maxXVelocity;
 
         /// <summary>
         /// Should the player auto slowdown when in the air?
         /// </summary>
         [SerializeField]
         private bool autoSlowdownInAir;
+        
+        // Jump settings section.
+        [Header("Jump Settings")]
+
+        /// <summary>
+        /// Curve read for the acceleration to be used.
+        /// </summary>
+        [SerializeField]
+        private AnimationCurve jumpAccelerationCurve;
+
+        /// <summary>
+        /// The acceleration the player will experience when jumping.
+        /// </summary>
+        [SerializeField]
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        private float jumpAccelerationFactor;
 
         /// <summary>
         /// Maximum angle allowed to be considered if the player is "touching the ground" upon collision
@@ -108,6 +87,64 @@ namespace RGDCP1.Player
         [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
         private float maxGroundCollisionAngle;
+
+        // Air movement settings section.
+        [Header("Air Movement")]
+
+        /// <summary>
+        /// Curve read for the acceleration to be used.
+        /// </summary>
+        [SerializeField]
+        private AnimationCurve airAccelerationCurve;
+
+        /// <summary>
+        /// Acceleration factor in m/s^2 for when the player is in the air.
+        /// </summary>
+        [SerializeField]
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        private float airAccelerationFactor;
+
+        /// <summary>
+        /// Curve read for the deceleration to be used.
+        /// </summary>
+        [SerializeField]
+        private AnimationCurve airDecelerationCurve;
+
+        /// <summary>
+        /// Deceleration factor in m/s^2 for when the player is in the air.
+        /// </summary>
+        [SerializeField]
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        private float airDecelerationFactor;
+
+        // Ground movement settings section.
+        [Header("Ground Movement")]
+
+        /// <summary>
+        /// Curve read for the deceleration to be used.
+        /// </summary>
+        [SerializeField]
+        private AnimationCurve groundAccelerationCurve;
+
+        /// <summary>
+        /// Acceleration factor in m/s^2 for when the player is grounded.
+        /// </summary>
+        [SerializeField]
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        private float groundAccelerationFactor;
+
+        /// <summary>
+        /// Curve read for the deceleration to be used.
+        /// </summary>
+        [SerializeField]
+        private AnimationCurve groundDecelerationCurve;
+
+        /// <summary>
+        /// Deceleration factor in m/s^2 for when the player is grounded.
+        /// </summary>
+        [SerializeField]
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        private float groundDecelerationFactor;
 
         // Debug settings section
         [Header("Debug Settings")]
@@ -183,11 +220,11 @@ namespace RGDCP1.Player
         /// </summary>
         private void MovementUpdate()
         {
-            // Check if the acceleration should
-            // Currently exponential
-            // TODO: Acceleration Functions - should use functions rather than fixed
-            float acceleration = isGrounded ? groundAcceleration*groundAcceleration : airAcceleration*airAcceleration;
-            float deceleration = isGrounded ? groundDeceleration*groundDeceleration : airDeceleration*airDeceleration;
+            float xVelocity = Mathf.Abs(playerRigidbody.velocity.x);
+
+            // Set the correct acceleration depending on state
+            float acceleration = isGrounded ? (groundAccelerationCurve.Evaluate(xVelocity/maxXVelocity)+1)*groundAccelerationFactor : (airAccelerationCurve.Evaluate(xVelocity / maxXVelocity) + 1) *airAccelerationFactor;
+            float deceleration = isGrounded ? (groundDecelerationCurve.Evaluate(xVelocity / maxXVelocity)+1)*groundDecelerationFactor : (airDecelerationCurve.Evaluate(xVelocity / maxXVelocity) + 1) *airDecelerationFactor;
 
             // Calculate the threshold to avoid overshooting auto slow down
             slowdownThreshold = deceleration * Time.fixedDeltaTime;
@@ -199,12 +236,12 @@ namespace RGDCP1.Player
             if (xMovementAxis == 0 && (autoSlowdownInAir || isGrounded))
             {
                 // If we need the auto slowdown
-                if (Mathf.Abs(playerRigidbody.velocity.x) >= slowdownThreshold)
+                if (xVelocity >= slowdownThreshold)
                 {
                     playerRigidbody.AddForce(new Vector2(deceleration * playerRigidbody.mass * currentDirection * -1, 0));
                 }
                 // If we need slowdown and, we should be stopped, stop the player's x movement, to avoid jittering from the slowing
-                else if (Mathf.Abs(playerRigidbody.velocity.x) < slowdownThreshold && playerRigidbody.velocity.x != 0)
+                else if (xVelocity < slowdownThreshold && playerRigidbody.velocity.x != 0)
                 { 
                     playerRigidbody.velocity = new Vector2(0, playerRigidbody.velocity.y);
                 }
@@ -215,12 +252,12 @@ namespace RGDCP1.Player
                playerRigidbody.AddForce(new Vector2(deceleration * playerRigidbody.mass * xMovementAxis, 0));
             }
             // Acceleration, checking if we are overspeed
-            else if (Mathf.Abs(playerRigidbody.velocity.x) < maxVelocity)
+            else if (xVelocity < maxXVelocity)
             {
                 float force = acceleration * playerRigidbody.mass;
-                if (force / playerRigidbody.mass * Time.fixedDeltaTime + Mathf.Abs(playerRigidbody.velocity.x) > maxVelocity)
+                if (force / playerRigidbody.mass * Time.fixedDeltaTime + xVelocity > maxXVelocity)
                 {
-                    force = ((maxVelocity - Mathf.Abs(playerRigidbody.velocity.x)) / Time.fixedDeltaTime) * playerRigidbody.mass;
+                    force = ((maxXVelocity - xVelocity) / Time.fixedDeltaTime) * playerRigidbody.mass;
                 }
                 playerRigidbody.AddForce(new Vector2(force*xMovementAxis, 0));
             }          
@@ -231,10 +268,12 @@ namespace RGDCP1.Player
         /// </summary> 
         private void JumpUpdate()
         {
+            // TODO: Acceleration Function - evaluate at time taken for jump, divided by total time for jump (will eventually reach 0)
+            float force = jumpAccelerationCurve.Evaluate(0) * jumpAccelerationFactor * playerRigidbody.mass;
             // TODO: Jump - Apply jump force in .normal direction of collided surface.
-            // TODO: Jump - Jumps should be restricted, by time? height?.
+            // TODO: Jump - Jumps should be restricted, by time? height?. time required to reach height based on curve???
             // TODO: Jump - Jumps should push the object jumped from in a proper way.
-            if (jumpPressed) playerRigidbody.AddForce(playerUp * jumpAcceleration * playerRigidbody.mass);
+            if (jumpPressed) playerRigidbody.AddForce(playerUp * force);
         }
 
         /// <summary>

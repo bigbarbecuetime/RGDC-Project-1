@@ -106,6 +106,7 @@ namespace RGDCP1.Player
 
         /// <summary>
         /// Curve read for the deceleration to be used.
+        /// Decelerations are evaulated in reverse, 1-0 based on xVelocity.
         /// </summary>
         [SerializeField]
         private AnimationCurve airDecelerationCurve;
@@ -135,6 +136,7 @@ namespace RGDCP1.Player
 
         /// <summary>
         /// Curve read for the deceleration to be used.
+        /// Decelerations are evaulated in reverse, 1-0 based on xVelocity.
         /// </summary>
         [SerializeField]
         private AnimationCurve groundDecelerationCurve;

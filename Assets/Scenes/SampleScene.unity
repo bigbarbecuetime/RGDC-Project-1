@@ -706,7 +706,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  jumpAccelerationFactor: 40
+  jumpAccelerationFactor: 45
+  maxJumpTime: 1
   maxGroundCollisionAngle: 40
   airAccelerationCurve:
     serializedVersion: 2

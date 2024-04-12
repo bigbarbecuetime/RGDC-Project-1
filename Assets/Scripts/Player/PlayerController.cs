@@ -1,3 +1,4 @@
+using System.ComponentModel.Design;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -29,6 +30,25 @@ namespace RGDCP1.Player
         ///  Value used to determine if trying to jump
         /// </summary>
         private bool jumpPressed;
+
+        
+        /// <summary>
+        /// Used when jumping, to time how long has been jumping. And when a new jump can begin.
+        /// </summary>
+        private float jumpTimer = 0;
+
+        // TODO: State - Handle with state machine
+        /// <summary>
+        /// Stores if the player is currently jumping
+        /// </summary>
+        private bool isJumping = false;
+
+        // TODO: State - state should be stored in a seperate state machine class
+        /// <summary>
+        /// Stores if the player is currently grounded or not
+        /// The player is considered grounded when, the player's "feet" are touching a surface below it
+        /// </summary>
+        private bool isGrounded = false;
 
         /// <summary>
         /// Threashold to see when we need to slow down the player automatically, when landed and no input is pressed, calculated based on deceleration.
@@ -80,6 +100,13 @@ namespace RGDCP1.Player
         [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
         private float jumpAccelerationFactor;
+
+        /// <summary>
+        /// Maximum jump time allowed, in seconds.
+        /// </summary>
+        [SerializeField]
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        private float maxJumpTime;
 
         /// <summary>
         /// Maximum angle allowed to be considered if the player is "touching the ground" upon collision
@@ -158,13 +185,6 @@ namespace RGDCP1.Player
         [SerializeField]
         private bool debugMode;
 
-        // TODO: State - state should be stored in a seperate state machine class
-        /// <summary>
-        /// Stores if the player is currently grounded or not
-        /// The player is considered grounded when, the player's "feet" are touching a surface below it
-        /// </summary>
-        private bool isGrounded = false;
-
         /// <summary>
         /// Player will jump, called by event from player input component.
         /// </summary>
@@ -211,14 +231,15 @@ namespace RGDCP1.Player
             
             MovementUpdate();
             JumpUpdate();
-            
+
             // We assume that if the player is not moving, then the player will stay in its current state, otherwise its possible to be not grounded
-            isGrounded = playerRigidbody.velocity.magnitude <= 0 ? isGrounded : false;
+            isGrounded = playerRigidbody.velocity.magnitude <= 0 && isGrounded;
         }
 
         // TODO: State - Refactor to use a defined a series of states
         /// <summary>
         /// Update the player for one step of time  for movement
+        /// Intended to be called in fixed update.
         /// </summary>
         private void MovementUpdate()
         {
@@ -261,21 +282,36 @@ namespace RGDCP1.Player
                 {
                     force = ((maxXVelocity - xVelocity) / Time.fixedDeltaTime) * playerRigidbody.mass;
                 }
+
                 playerRigidbody.AddForce(new Vector2(force*xMovementAxis, 0));
             }          
         }
-         
+
         /// <summary>
         /// Update the player for one time step for jumping
+        /// Intended to be called in fixed update.
         /// </summary> 
         private void JumpUpdate()
         {
-            // TODO: Acceleration Function - evaluate at time taken for jump, divided by total time for jump (will eventually reach 0)
-            float force = jumpAccelerationCurve.Evaluate(0) * jumpAccelerationFactor * playerRigidbody.mass;
-            // TODO: Jump - Apply jump force in .normal direction of collided surface.
-            // TODO: Jump - Jumps should be restricted, by time? height?. time required to reach height based on curve???
-            // TODO: Jump - Jumps should push the object jumped from in a proper way.
-            if (jumpPressed) playerRigidbody.AddForce(playerUp * force);
+
+            // If time limit exceded for jumping, or no longer trying to jump
+            if (isJumping && (jumpTimer > maxJumpTime || !jumpPressed))
+            {
+                // Stop jumping
+                isJumping = false;
+                jumpTimer = 0;
+            }
+            else if (isJumping) jumpTimer += Time.fixedDeltaTime;
+            // When grounded, trying to jump, and not already in a jump
+            else if (isGrounded && jumpPressed && jumpTimer == 0) isJumping = true;
+
+            // TODO: Jump - Jumps should push the object jumped from with an equal force.
+            if (isJumping)
+            {
+                float force = jumpAccelerationCurve.Evaluate(jumpTimer/maxJumpTime) * jumpAccelerationFactor * playerRigidbody.mass;
+                // TODO: Jump - Apply jump force in .normal direction of collided surface?
+                playerRigidbody.AddForce(playerUp * force);
+            }
         }
 
         /// <summary>

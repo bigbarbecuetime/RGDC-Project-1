@@ -7,12 +7,12 @@ public class Debugger : MonoBehaviour
     /// <summary>
     /// Original timescale of the project.
     /// </summary>
-    private float initalTimescale;
+    private float initialTimescale;
 
     /// <summary>
-    /// Defines if debugging is enabled or not.
+    /// Original gravity of the physics system.
     /// </summary>
-    public bool debugging = false;
+    private Vector2 initialGravity;
 
     /// <summary>
     /// Defines if frameRate debugging is enabled or not.
@@ -22,7 +22,7 @@ public class Debugger : MonoBehaviour
     /// <summary>
     /// The target framerate, -1 being default.
     /// </summary>
-    [Min(1)]
+    [Min(-1)]
     public int targetFrameRate = -1;
 
     /// <summary>
@@ -36,16 +36,32 @@ public class Debugger : MonoBehaviour
     [Min(0)]
     public float timeScale;
 
+    /// <summary>
+    /// Defines if gravity debugging is enabled or not.
+    /// </summary>
+    public bool gravityDebugging = false;
+
+    /// <summary>
+    /// Time scale the project will be set to.
+    /// </summary>
+    public Vector2 gravity;
+
+    private void Awake()
+    {
+        DontDestroyOnLoad(this.gameObject);
+    }
+
     private void Start()
     {
-        initalTimescale = Time.timeScale;
+        initialTimescale = Time.timeScale;
+        initialGravity = Physics2D.gravity;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (!debugging) return;
         Application.targetFrameRate = frameRateDebugging ? targetFrameRate : -1;
-        Time.timeScale = timeScaleDebugging ? timeScale : initalTimescale;
+        Time.timeScale = timeScaleDebugging ? timeScale : initialTimescale;
+        Physics2D.gravity = gravityDebugging ? gravity : initialGravity;
     }
 }

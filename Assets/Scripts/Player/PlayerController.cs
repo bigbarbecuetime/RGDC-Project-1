@@ -22,12 +22,12 @@ namespace RGDCP1.Player
         // TODO: Movement - Update to support more than just -1, 0, 1 should work with all floating point values
         /// <summary>
         /// Value used to determine if trying to move left or right in the x axis.
-        /// Fixed between -1 - 1
+        /// Fixed between -1 - 1.
         /// </summary>
         private float xMovementAxis = 0;
 
         /// <summary>
-        ///  Value used to determine if trying to jump
+        ///  Value used to determine if trying to jump.
         /// </summary>
         private bool jumpPressed;
 
@@ -39,14 +39,19 @@ namespace RGDCP1.Player
 
         // TODO: State - Handle with state machine
         /// <summary>
-        /// Stores if the player is currently jumping
+        /// Stores if the player is currently jumping.
         /// </summary>
         private bool isJumping = false;
 
+        /// <summary>
+        /// Timer for how long has the player been in coyote time.
+        /// </summary>
+        private float coyoteTimer = 0;
+
         // TODO: State - state should be stored in a seperate state machine class
         /// <summary>
-        /// Stores if the player is currently grounded or not
-        /// The player is considered grounded when, the player's "feet" are touching a surface below it
+        /// Stores if the player is currently grounded or not.
+        /// The player is considered grounded when, the player's "feet" are touching a surface below it.
         /// </summary>
         private bool isGrounded = false;
 
@@ -56,7 +61,7 @@ namespace RGDCP1.Player
         private float slowdownThreshold;
 
         /// <summary>
-        /// Direction of the "head" of the player, its relative up
+        /// Direction of the "head" of the player, its relative up.
         /// </summary>
         private Vector2 playerUp = Vector3.up;
 
@@ -109,7 +114,14 @@ namespace RGDCP1.Player
         private float maxJumpTime;
 
         /// <summary>
-        /// Maximum angle allowed to be considered if the player is "touching the ground" upon collision
+        /// Maximum time of falling off of a platform, that jumping is still allowed.
+        /// </summary>
+        [SerializeField]
+        [Min(MIN_ATTRIBUTE_VALUE)]
+        private float coyoteTime;
+
+        /// <summary>
+        /// Maximum angle allowed to be considered if the player is "touching the ground" upon collision.
         /// </summary>
         [SerializeField]
         [Min(MIN_ATTRIBUTE_VALUE)]
@@ -287,12 +299,25 @@ namespace RGDCP1.Player
             }          
         }
 
+        // HACK: This code is a mess, rewrite it all.
         /// <summary>
         /// Update the player for one time step for jumping
         /// Intended to be called in fixed update.
         /// </summary> 
         private void JumpUpdate()
         {
+            // Stores if we can jump.
+            bool canJump = false;
+            // if grounded, update the coyoteTimer
+            if (isGrounded && coyoteTimer > 0) coyoteTimer = 0;
+            // If not grounded start counting up
+            else if (!isGrounded) 
+            coyoteTimer += Time.fixedDeltaTime;
+
+            canJump = coyoteTimer <= coyoteTime;
+
+            Debug.Log(canJump);
+            Debug.Log(coyoteTime);
 
             // If time limit exceded for jumping, or no longer trying to jump
             if (isJumping && (jumpTimer > maxJumpTime || !jumpPressed))
@@ -302,8 +327,12 @@ namespace RGDCP1.Player
                 jumpTimer = 0;
             }
             else if (isJumping) jumpTimer += Time.fixedDeltaTime;
-            // When grounded, trying to jump, and not already in a jump
-            else if (isGrounded && jumpPressed && jumpTimer == 0) isJumping = true;
+            // When able to jump according to the coyote timer, trying to jump, and not already in a jump
+            else if (canJump && jumpPressed)
+            {
+                isJumping = true;
+            }    
+                
 
             // TODO: Jump - Jumps should push the object jumped from with an equal force.
             if (isJumping)

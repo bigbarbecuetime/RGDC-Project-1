@@ -6,10 +6,13 @@ using static UnityEngine.Rendering.DebugUI;
 
 namespace RGDCP1.Player
 {
+    // TODO: Seperate input component from player class, and create a input manager for multiple local players supported
+
     /// <summary>
     /// PlayerController is used to determine the physical movements, and movement state of the player in the world.
     /// It is a physics based controller relying on a rigidbody2d.
     /// </summary>
+    [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerController : MonoBehaviour
     {
         // TODO: State - Player Controller will eventually use a Finite State Machine to track its current state. (Ex. Falling, Running)
@@ -66,10 +69,19 @@ namespace RGDCP1.Player
         private Vector2 playerUp = Vector3.up;
 
         /// <summary>
+        /// Direction of the attack cone
+        /// Z rotation
+        /// </summary>
+        private float aimAngle = 0f;
+
+        /// <summary>
         /// Rigidbody used for the player's movement.
         /// </summary>
-        [SerializeField]
         private Rigidbody2D playerRigidbody;
+
+        [SerializeField]
+        [SerializeReference]
+        private GameObject attackCone;
 
         // Camera settings section.
         [Header("Camera Settings")]
@@ -216,6 +228,16 @@ namespace RGDCP1.Player
             xMovementAxis = context.ReadValue<float>();
         }
 
+        // TODO: ensure some types of aiming are prioritized higher than others, seperate "priority aim" bind?
+        /// <summary>
+        /// Aim vector will be set
+        /// </summary>
+        /// <param name="context"></param>
+        public void OnAim(InputAction.CallbackContext context)
+        {
+            if (context.performed) aimAngle = Vector2.SignedAngle(Vector2.right, context.ReadValue<Vector2>());
+        }
+
         /// <summary>
         /// Upon entering a collision
         /// </summary>
@@ -235,12 +257,21 @@ namespace RGDCP1.Player
         }
 
         /// <summary>
+        /// Start is called first before the game starts.
+        /// </summary>
+        public void Start()
+        {
+            playerRigidbody = GetComponent<Rigidbody2D>();
+        }
+
+        /// <summary>
         /// FixedUpdated called by Unity's physics system.
         /// </summary>
         public void FixedUpdate()
         {
             if (debugMode) playerRigidbody.GetComponentInChildren<SpriteRenderer>().color = isGrounded ? Color.green : Color.red;
-            
+
+            AimUpdate();
             MovementUpdate();
             JumpUpdate();
 
@@ -248,6 +279,7 @@ namespace RGDCP1.Player
             isGrounded = playerRigidbody.velocity.magnitude <= 0 && isGrounded;
         }
 
+        // HACK: This is a mess that can be simplified
         // TODO: State - Refactor to use a defined a series of states
         /// <summary>
         /// Update the player for one step of time  for movement
@@ -316,9 +348,6 @@ namespace RGDCP1.Player
 
             canJump = coyoteTimer <= coyoteTime;
 
-            Debug.Log(canJump);
-            Debug.Log(coyoteTime);
-
             // If time limit exceded for jumping, or no longer trying to jump
             if (isJumping && (jumpTimer > maxJumpTime || !jumpPressed))
             {
@@ -341,6 +370,14 @@ namespace RGDCP1.Player
                 // TODO: Jump - Apply jump force in .normal direction of collided surface?
                 playerRigidbody.AddForce(playerUp * force);
             }
+        }
+
+        /// <summary>
+        /// Updates the rotation of the attack cone to to where the player is aiming.
+        /// </summary>
+        private void AimUpdate()
+        {
+            attackCone.transform.rotation = Quaternion.Euler(0, 0, aimAngle);
         }
 
         /// <summary>

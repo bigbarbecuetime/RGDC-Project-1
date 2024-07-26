@@ -239,7 +239,7 @@ namespace RGDCP1.Player
         /// </summary>
         public void FixedUpdate()
         {
-            if (debugMode) playerRigidbody.GetComponent<SpriteRenderer>().color = isGrounded ? Color.green : Color.red;
+            if (debugMode) playerRigidbody.GetComponentInChildren<SpriteRenderer>().color = isGrounded ? Color.green : Color.red;
             
             MovementUpdate();
             JumpUpdate();

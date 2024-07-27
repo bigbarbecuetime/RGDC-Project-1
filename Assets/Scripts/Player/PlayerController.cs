@@ -13,6 +13,7 @@ namespace RGDCP1.Player
     /// It is a physics based controller relying on a rigidbody2d.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
+    [RequireComponent(typeof(PlayerInput))]
     public class PlayerController : MonoBehaviour
     {
         // TODO: State - Player Controller will eventually use a Finite State Machine to track its current state. (Ex. Falling, Running)

@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace RGDCP1.Debugging
 {
-
     public class RigidbodyDebug : MonoBehaviour
     {
         /// <summary>
